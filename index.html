@@ -220,6 +220,12 @@
   letter-spacing:.5px;margin-left:auto;margin-right:14px}
 .mast-logo img{max-height:40px;max-width:130px;display:block}
 .auth-crest img{width:100%;height:100%;object-fit:contain;display:block}
+.mast-ver{font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.4px;
+  color:rgba(255,255,255,.62);background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 10px;
+  white-space:nowrap;margin-left:auto}
+.auth-ver{position:fixed;right:14px;bottom:14px;font-family:'IBM Plex Mono',monospace;
+  font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.4px}
 
 #adminPanel .fld{margin-bottom:16px}
 #adminPanel .fld>label:first-child{display:block;font-size:11px;letter-spacing:.08em;
@@ -297,6 +303,7 @@
     <h1>Supervisor Shift Report</h1>
     <div class="sub">Almoosa Health Group · Nursing Informatics</div>
   </div>
+  <div class="mast-ver" id="verBadge"></div>
   <div class="mast-logo" id="mastLogo">AHG</div>
   <div class="date-nav">
     <button id="prevDay" title="Previous day">‹</button>
@@ -490,7 +497,7 @@
   // the crest falls back to the letter and nothing breaks.
   const AHG_LOGO_URL = 'logo.png';
 
-  const APP_VERSION  = '0.6.0';
+  const APP_VERSION  = '0.6.1';
   const APP_DATE     = '2026-09-07';
   let   API_BUILD    = '?';   // server fingerprint, reported by getSession
 
@@ -518,14 +525,12 @@
   document.addEventListener('DOMContentLoaded', applyLogo);
 
   function paintVersion(){
+    // Lives in the masthead. Before sign-in there is no masthead, so a plain
+    // line sits at the corner of the login screen instead.
     let b = $('verBadge');
     if(!b){
       b = document.createElement('div');
-      b.id = 'verBadge';
-      b.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:9999;'+
-        'font-family:"IBM Plex Mono",monospace;font-size:11px;color:#fff;'+
-        'background:rgba(6,70,63,.90);border-radius:20px;letter-spacing:.5px;'+
-        'padding:5px 10px;box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none';
+      b.id = 'verBadge'; b.className = 'auth-ver';
       document.body.appendChild(b);
     }
     // The page version is hand-set; the api build is a hash of the deployed
