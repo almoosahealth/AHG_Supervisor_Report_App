@@ -211,6 +211,29 @@
   .entry-status.err{color:var(--alert)}
   .entry-status.ok{color:var(--good)}
   .entry-status.warn{color:var(--amber);background:var(--amber-wash);padding:11px 14px;border-radius:9px;border:1px solid #ecdcb8}
+
+/* admin console */
+#adminPanel .fld{margin-bottom:16px}
+#adminPanel .fld>label:first-child{display:block;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+#adminPanel input[type=text],#adminPanel input[type=email],#adminPanel input:not([type]){
+  width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:8px;
+  font:inherit;background:#fff}
+#adminPanel input[readonly]{background:#f4f4f1;color:var(--faint)}
+#adminPanel .chk{display:flex;align-items:flex-start;gap:9px;padding:7px 0;
+  font-size:14px;cursor:pointer}
+#adminPanel .chk input{margin-top:3px;flex:none}
+#adminPanel .btn{background:var(--ink);color:#fff;border:0;padding:11px 20px;
+  border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+#adminPanel .btn[disabled]{opacity:.5;cursor:default}
+#adminPanel .btn-ghost{background:none;border:1px solid var(--line);padding:11px 20px;
+  border-radius:8px;font:inherit;cursor:pointer}
+#adminPanel .btn-sm{background:none;border:1px solid var(--line);padding:5px 12px;
+  border-radius:6px;font:inherit;font-size:12px;cursor:pointer}
+#adminPanel .tbl{width:100%;border-collapse:collapse}
+#adminPanel .tbl th{text-align:left;font-size:11px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--faint);padding:12px 14px;border-bottom:1px solid var(--line)}
+#adminPanel .tbl td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 </style>
 </head>
 <body>
@@ -455,7 +478,7 @@
   const CLIENT_ID       = '219fd90f-4c4b-474d-ae7d-a17f71ecc511';   // AHG-NursingApps-Graph
   const TENANT_ID       = '1bbc68f6-abcf-4283-92d7-5bb0a7c3c84b';
   const ALLOWED_DOMAINS = ['almoosahospital.com.sa','almoosahealth.com.sa'];
-  const REDIRECT_URI    = 'https://almoosahealth.github.io/AH_NSA_ShiftReports/';
+  const REDIRECT_URI    = 'https://almoosahealth.github.io/AHG_Supervisor_Report_App/';
 
   const $ = id => document.getElementById(id);
 
@@ -521,6 +544,7 @@
       const r = await fetch(`${API}?action=getSession&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
       const sess = await r.json();
       const u = sess.user || sess;
+      // Config arrives with the session, so the entry form never has to ask.
       if(sess.units){ SESSION_CONFIG = { units: sess.units, floors: sess.floors }; }
       if(!u.found){
         // valid Almoosa login, but not registered / inactive
@@ -592,6 +616,7 @@
     document.getElementById('report').classList.add('hidden');
     const nsa = document.getElementById('nsaEntry'); if(nsa) nsa.classList.add('hidden');
     const ph = document.getElementById('rolePlaceholder'); if(ph) ph.classList.add('hidden');
+    const ap = document.getElementById('adminPanel'); if(ap) ap.classList.add('hidden');
     document.querySelector('.date-nav').style.display = (role==='director') ? '' : 'none';
 
     if(role==='director'){
@@ -605,9 +630,156 @@
       // it itself or the spinner sits on top of a fully rendered form.
       ['loadingState','emptyState','report'].forEach(x=>$(x) && $(x).classList.add('hidden'));
       startNsaEntry();
+    } else if(role==='admin'){
+      document.querySelector('.masthead .sub').textContent =
+        'Almoosa Health Group · Nursing Informatics Console';
+      ['loadingState','emptyState','report'].forEach(x=>$(x) && $(x).classList.add('hidden'));
+      startAdmin();
     } else {
       showRolePlaceholder(role);
     }
+  }
+
+  /* ═════════════ Admin console ═════════════ */
+
+  const ADMIN_ROLES = [
+    ['nsa','Nurse Shift Admin','Files shift reports'],
+    ['director','Director','Reads the dashboard'],
+    ['admin','Administrator','Manages this console']
+  ];
+  let ADMIN_USERS = [], ADMIN_HOSPITALS = [], ADMIN_EDITING = null;
+
+  function adminPanel(){
+    let el = $('adminPanel');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'adminPanel';
+      el.innerHTML = `
+        <h1 class="page-title">Nursing Informatics Console</h1>
+        <div class="rule"></div>
+        <div class="acc" style="margin-bottom:18px">
+          <div class="acc-head"><span class="acc-title">People with access</span>
+            <span class="acc-sum" id="admCount">—</span></div>
+          <div class="acc-body" style="padding:0">
+            <table class="tbl"><thead><tr>
+              <th>Name</th><th>Email</th><th>Roles</th><th>Hospitals</th>
+              <th>Status</th><th></th>
+            </tr></thead><tbody id="admBody"></tbody></table>
+          </div>
+        </div>
+        <div class="acc">
+          <div class="acc-head"><span class="acc-title" id="admFormTitle">Add a person</span></div>
+          <div class="acc-body" id="admForm"></div>
+        </div>
+        <div id="admMsg" style="margin-top:14px"></div>`;
+      document.querySelector('main, .wrap, body').appendChild(el);
+    }
+    el.classList.remove('hidden');
+    return el;
+  }
+
+  async function startAdmin(){
+    adminPanel();
+    $('admBody').innerHTML = '<tr><td colspan="6" style="padding:18px">Loading…</td></tr>';
+    try{
+      const r = await fetch(`${API}?action=listUsers&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+      const d = await r.json();
+      if(d.error) throw new Error(d.error);
+      ADMIN_USERS = d.users||[]; ADMIN_HOSPITALS = d.hospitals||[];
+      renderAdminUsers(); renderAdminForm(null);
+    }catch(e){
+      $('admBody').innerHTML =
+        `<tr><td colspan="6" style="padding:18px;color:var(--alert)">Could not load: ${e.message}</td></tr>`;
+    }
+  }
+
+  function renderAdminUsers(){
+    $('admCount').textContent = `${ADMIN_USERS.length} registered`;
+    $('admBody').innerHTML = ADMIN_USERS.map((u,i)=>{
+      const active = String(u.is_active).toUpperCase()==='YES';
+      return `<tr style="opacity:${active?1:.45}">
+        <td><b>${u.full_name||'—'}</b><br><span class="zero" style="font-size:12px">${u.title||''}</span></td>
+        <td class="mono" style="font-size:12px">${u.email}</td>
+        <td>${String(u.role||'').split(',').map(r=>`<span class="pill">${r.trim()}</span>`).join(' ')}</td>
+        <td class="mono" style="font-size:12px">${u.hospitals||'—'}</td>
+        <td>${active?'<span class="pill a1">Active</span>':'<span class="pill">Inactive</span>'}</td>
+        <td><button class="btn-sm" data-edit="${i}">Edit</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" style="padding:18px">Nobody registered yet.</td></tr>';
+
+    $('admBody').querySelectorAll('[data-edit]').forEach(b=>{
+      b.onclick = ()=> renderAdminForm(ADMIN_USERS[+b.dataset.edit]);
+    });
+  }
+
+  function renderAdminForm(u){
+    ADMIN_EDITING = u;
+    $('admFormTitle').textContent = u ? `Edit ${u.email}` : 'Add a person';
+    const has = (list,v)=> String(list||'').split(',').map(x=>x.trim().toLowerCase()).includes(v);
+    const hospHas = v => String(u?u.hospitals:'').split(',').map(x=>x.trim().toUpperCase()).includes(v);
+
+    $('admForm').innerHTML = `
+      <div class="fld"><label>Email</label>
+        <input id="admEmail" type="email" value="${u?u.email:''}" ${u?'readonly':''}
+               placeholder="name@almoosahealth.com.sa"></div>
+      <div class="fld"><label>Full name</label>
+        <input id="admName" value="${u?(u.full_name||''):''}"></div>
+      <div class="fld"><label>Title</label>
+        <input id="admTitle" value="${u?(u.title||''):''}" placeholder="Nursing Supervisor"></div>
+      <div class="fld"><label>Staff ID</label>
+        <input id="admStaff" value="${u?(u.staff_id||''):''}"></div>
+      <div class="fld"><label>Roles</label>
+        ${ADMIN_ROLES.map(([v,l,d])=>`<label class="chk">
+          <input type="checkbox" class="admRole" value="${v}" ${u&&has(u.role,v)?'checked':''}>
+          <span><b>${l}</b> — ${d}</span></label>`).join('')}</div>
+      <div class="fld"><label>Hospitals</label>
+        <label class="chk"><input type="checkbox" class="admHosp" value="*" ${u&&hospHas('*')?'checked':''}>
+          <span><b>All</b> — the whole group</span></label>
+        ${ADMIN_HOSPITALS.map(h=>`<label class="chk">
+          <input type="checkbox" class="admHosp" value="${h.hospital_id}" ${u&&hospHas(h.hospital_id)?'checked':''}>
+          <span><b>${h.hospital_id}</b> — ${h.name}</span></label>`).join('')}</div>
+      <div class="fld"><label>Status</label>
+        <label class="chk"><input type="checkbox" id="admActive"
+          ${!u || String(u.is_active).toUpperCase()==='YES'?'checked':''}>
+          <span>Active — can sign in</span></label></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn" id="admSave">${u?'Save changes':'Add person'}</button>
+        ${u?'<button class="btn-ghost" id="admCancel">Cancel</button>':''}
+      </div>`;
+
+    $('admSave').onclick = saveAdminUser;
+    if($('admCancel')) $('admCancel').onclick = ()=> renderAdminForm(null);
+  }
+
+  async function saveAdminUser(){
+    const btn = $('admSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const payload = {
+      action:'saveUser', token:GRAPH_TOKEN, hospital:HOSPITAL,
+      email: $('admEmail').value.trim(),
+      full_name: $('admName').value.trim(),
+      title: $('admTitle').value.trim(),
+      staff_id: $('admStaff').value.trim(),
+      roles: [...document.querySelectorAll('.admRole:checked')].map(c=>c.value),
+      hospitals: [...document.querySelectorAll('.admHosp:checked')].map(c=>c.value),
+      is_active: $('admActive').checked ? 'YES' : 'NO'
+    };
+    try{
+      const r = await fetch(API, { method:'POST', body: JSON.stringify(payload) });
+      const d = await r.json();
+      if(d.error) throw new Error(d.error);
+      admMsg(`${d.created?'Added':'Updated'} ${d.user.email}.`, 'ok');
+      await startAdmin();
+    }catch(e){
+      admMsg(e.message, 'err');
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
+  function admMsg(text, kind){
+    $('admMsg').innerHTML =
+      `<div class="state" style="padding:12px;color:${kind==='err'?'var(--alert)':'var(--good)'}">${text}</div>`;
+    setTimeout(()=>{ if($('admMsg')) $('admMsg').innerHTML=''; }, 6000);
   }
 
   function showRolePlaceholder(role){
@@ -827,7 +999,17 @@
           `<div class="bar" style="width:${hasRec&&rec>0?Math.min(100,(days/Math.max(days,rec))*100):100}%"></div>`+
         `</div>`;
       } else {
-        // A simple monthly counter (no streak date) — show the count, not "no data"
+        // A streak that has never recorded an event: say so plainly rather
+        // than rendering a 0 that reads like a real measurement.
+        if(t.no_data){
+          h+=`<div class="streak counter" style="opacity:.55">`+
+            `<div class="ev">${t.tracker_type} <span class="b">${t.building||''}</span></div>`+
+            `<div class="days mono" style="font-size:20px;color:var(--faint)">No data yet</div>`+
+            `<div class="rec">awaiting first recorded event</div>`+
+            `<div class="bar" style="width:100%;opacity:.15"></div>`+
+          `</div>`;
+          return;
+        }
         const cnt = n(t.total_this_month);
         h+=`<div class="streak counter">`+
           `<div class="ev">${t.tracker_type} <span class="b">${t.building||''}</span></div>`+
@@ -867,11 +1049,8 @@
     try{
       let data = SESSION_CONFIG;
       if(!data){
-      let data = SESSION_CONFIG;
-      if(!data){
         const r = await fetch(`${API}?action=getConfig&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
         data = await r.json();
-      }
       }
       if(data.error){ throw new Error(data.error + (data.reason?' ('+data.reason+')':'')); }
       entState.units  = (data.units||[]).filter(u=>String(u.is_active).toUpperCase()==='YES');
