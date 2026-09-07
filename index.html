@@ -521,7 +521,6 @@
       const r = await fetch(`${API}?action=getSession&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
       const sess = await r.json();
       const u = sess.user || sess;
-      // Config arrives with the session, so the entry form never has to ask.
       if(sess.units){ SESSION_CONFIG = { units: sess.units, floors: sess.floors }; }
       if(!u.found){
         // valid Almoosa login, but not registered / inactive
@@ -868,8 +867,11 @@
     try{
       let data = SESSION_CONFIG;
       if(!data){
+      let data = SESSION_CONFIG;
+      if(!data){
         const r = await fetch(`${API}?action=getConfig&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
         data = await r.json();
+      }
       }
       if(data.error){ throw new Error(data.error + (data.reason?' ('+data.reason+')':'')); }
       entState.units  = (data.units||[]).filter(u=>String(u.is_active).toUpperCase()==='YES');
