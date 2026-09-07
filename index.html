@@ -598,6 +598,9 @@
     } else if(role==='nsa'){
       document.querySelector('.masthead .sub').textContent =
         'Almoosa Rehabilitation Hospital · Shift Entry';
+      // The director path hides these inside init(); the entry path has to do
+      // it itself or the spinner sits on top of a fully rendered form.
+      ['loadingState','emptyState','report'].forEach(x=>$(x) && $(x).classList.add('hidden'));
       startNsaEntry();
     } else {
       showRolePlaceholder(role);
@@ -861,9 +864,18 @@
     try{
       const r = await fetch(`${API}?action=getConfig&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
       const data = await r.json();
+      if(data.error){ throw new Error(data.error + (data.reason?' ('+data.reason+')':'')); }
       entState.units  = (data.units||[]).filter(u=>String(u.is_active).toUpperCase()==='YES');
       entState.blocks = data.floors||[];   // capacity blocks, for occupancy
-    }catch(e){ entState.units=[]; }
+      console.log('getConfig ->', data);
+      if(!entState.units.length){ throw new Error('getConfig returned '+((data.units||[]).length)+' units'); }
+    }catch(e){
+      entState.units=[]; entState.blocks=[];
+      // A silent catch here is how an auth or config failure ends up looking
+      // like "no units configured". Say what actually happened.
+      entShowMsg('Could not load units: '+e.message,'err');
+      console.error('getConfig failed', e);
+    }
     // FLOOR ORDER: L3 at top → L14 at bottom (ascending floor number)
     entState.units.sort((a,b)=> floorNum_(a.floor) - floorNum_(b.floor));
     entBuildCensus();
