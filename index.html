@@ -497,7 +497,7 @@
   // the crest falls back to the letter and nothing breaks.
   const AHG_LOGO_URL = 'logo.png';
 
-  const APP_VERSION  = '0.6.1';
+  const APP_VERSION  = '0.6.2';
   const APP_DATE     = '2026-09-07';
   let   API_BUILD    = '?';   // server fingerprint, reported by getSession
 
@@ -525,14 +525,17 @@
   document.addEventListener('DOMContentLoaded', applyLogo);
 
   function paintVersion(){
-    // Lives in the masthead. Before sign-in there is no masthead, so a plain
-    // line sits at the corner of the login screen instead.
-    let b = $('verBadge');
-    if(!b){
-      b = document.createElement('div');
-      b.id = 'verBadge'; b.className = 'auth-ver';
-      document.body.appendChild(b);
+    // Two homes: the masthead pill once signed in, and a plain line in the
+    // corner of the login screen. The masthead exists in the DOM from the
+    // start but is hidden, so painting only that one leaves the login screen
+    // blank — both get written every time.
+    let auth = $('verBadgeAuth');
+    if(!auth){
+      auth = document.createElement('div');
+      auth.id = 'verBadgeAuth'; auth.className = 'auth-ver';
+      document.body.appendChild(auth);
     }
+    const b = $('verBadge') || auth;
     // The page version is hand-set; the api build is a hash of the deployed
     // server source, stamped with when it first ran. If a deploy did not take,
     // the build string simply does not change.
@@ -540,7 +543,8 @@
     // build to report. Showing "api ?" reads like a fault rather than a
     // not-yet, so the api half only appears once getSession has answered.
     const known = API_BUILD && API_BUILD !== '?';
-    b.textContent = known ? `v${APP_VERSION} · api ${API_BUILD}` : `v${APP_VERSION}`;
+    const text = known ? `v${APP_VERSION} · api ${API_BUILD}` : `v${APP_VERSION}`;
+    b.textContent = text; auth.textContent = text;
     b.title = known
       ? `page ${APP_VERSION} (${APP_DATE})  ·  server build ${API_BUILD}`
       : `page ${APP_VERSION} (${APP_DATE})  ·  sign in to read the server build`;
