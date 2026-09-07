@@ -657,9 +657,11 @@
       el.innerHTML = `
         <h1 class="page-title">Nursing Informatics Console</h1>
         <div class="rule"></div>
-        <div class="acc" style="margin-bottom:18px">
-          <div class="acc-head"><span class="acc-title">People with access</span>
-            <span class="acc-sum" id="admCount">—</span></div>
+        <div class="acc open" id="accUsers" style="margin-bottom:18px">
+          <button class="acc-head" onclick="accToggle('accUsers')">
+            <span class="acc-caret">−</span>
+            <span class="acc-title">People with access</span>
+            <span class="acc-sum" id="admCount">—</span></button>
           <div class="acc-body" style="padding:0">
             <table class="tbl"><thead><tr>
               <th>Name</th><th>Email</th><th>Roles</th><th>Hospitals</th>
@@ -667,9 +669,11 @@
             </tr></thead><tbody id="admBody"></tbody></table>
           </div>
         </div>
-        <div class="acc">
-          <div class="acc-head"><span class="acc-title" id="admFormTitle">Add a person</span></div>
-          <div class="acc-body" id="admForm"></div>
+        <div class="acc open" id="accForm">
+          <button class="acc-head" onclick="accToggle('accForm')">
+            <span class="acc-caret">−</span>
+            <span class="acc-title" id="admFormTitle">Add a person</span></button>
+          <div class="acc-body" id="admForm" style="padding-top:18px"></div>
         </div>
         <div id="admMsg" style="margin-top:14px"></div>`;
       document.querySelector('main, .wrap, body').appendChild(el);
@@ -714,6 +718,7 @@
 
   function renderAdminForm(u){
     ADMIN_EDITING = u;
+    const box = $('accForm'); if(box) box.classList.add('open');
     $('admFormTitle').textContent = u ? `Edit ${u.email}` : 'Add a person';
     const has = (list,v)=> String(list||'').split(',').map(x=>x.trim().toLowerCase()).includes(v);
     const hospHas = v => String(u?u.hospitals:'').split(',').map(x=>x.trim().toUpperCase()).includes(v);
