@@ -224,8 +224,9 @@
   color:rgba(255,255,255,.62);background:rgba(255,255,255,.08);
   border:1px solid rgba(255,255,255,.14);border-radius:20px;padding:4px 10px;
   white-space:nowrap;margin-left:auto}
-.auth-ver{position:fixed;right:14px;bottom:14px;font-family:'IBM Plex Mono',monospace;
-  font-size:11px;color:rgba(255,255,255,.55);letter-spacing:.4px}
+.auth-ver{position:fixed;right:16px;bottom:14px;z-index:101;pointer-events:none;
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:rgba(255,255,255,.55);letter-spacing:.4px}
 
 #adminPanel .fld{margin-bottom:16px}
 #adminPanel .fld>label:first-child{display:block;font-size:11px;letter-spacing:.08em;
@@ -497,7 +498,7 @@
   // the crest falls back to the letter and nothing breaks.
   const AHG_LOGO_URL = 'logo.png';
 
-  const APP_VERSION  = '0.6.2';
+  const APP_VERSION  = '0.6.3';
   const APP_DATE     = '2026-09-07';
   let   API_BUILD    = '?';   // server fingerprint, reported by getSession
 
