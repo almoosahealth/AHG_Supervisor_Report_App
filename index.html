@@ -293,7 +293,6 @@
 <div id="app" class="hidden">
 
 <div class="masthead">
-  <div class="crest">A</div>
   <div class="mast-titles">
     <h1>Supervisor Shift Report</h1>
     <div class="sub">Almoosa Health Group · Nursing Informatics</div>
@@ -491,7 +490,7 @@
   // the crest falls back to the letter and nothing breaks.
   const AHG_LOGO_URL = 'logo.png';
 
-  const APP_VERSION  = '0.5.1';
+  const APP_VERSION  = '0.6.0';
   const APP_DATE     = '2026-09-07';
   let   API_BUILD    = '?';   // server fingerprint, reported by getSession
 
@@ -679,7 +678,9 @@
     const nsa = document.getElementById('nsaEntry'); if(nsa) nsa.classList.add('hidden');
     const ph = document.getElementById('rolePlaceholder'); if(ph) ph.classList.add('hidden');
     const ap = document.getElementById('adminPanel'); if(ap) ap.classList.add('hidden');
-    document.querySelector('.date-nav').style.display = (role==='director') ? '' : 'none';
+    ['prevDay','datePick','nextDay'].forEach(id=>{
+      const el = $(id); if(el) el.style.display = (role==='director') ? '' : 'none';
+    });
 
     if(role==='director'){
       document.querySelector('.masthead .sub').textContent =
