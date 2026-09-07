@@ -488,7 +488,8 @@
   }
   function isAllowed(email){ return ALLOWED_DOMAINS.some(d=>email.endsWith('@'+d)); }
 
-  let GRAPH_TOKEN  = '';     // Graph access token — proves identity to the server
+  let GRAPH_TOKEN    = '';   // Graph access token — proves identity to the server
+  let SESSION_CONFIG = null; // units + capacity blocks, delivered with the session
   let CURRENT_USER = null;   // {full_name, title, roles:[...], email}
   let ACTIVE_ROLE  = null;   // the role currently being viewed
 
@@ -517,8 +518,11 @@
   // Look the authenticated email up in the USERS tab → roles → route.
   async function resolveUser(email){
     try{
-      const r = await fetch(`${API}?action=getUser&token=${encodeURIComponent(GRAPH_TOKEN)}`);
-      const u = await r.json();
+      const r = await fetch(`${API}?action=getSession&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+      const sess = await r.json();
+      const u = sess.user || sess;
+      // Config arrives with the session, so the entry form never has to ask.
+      if(sess.units){ SESSION_CONFIG = { units: sess.units, floors: sess.floors }; }
       if(!u.found){
         // valid Almoosa login, but not registered / inactive
         const msg = u.reason==='inactive'
@@ -862,8 +866,11 @@
     entClearErr();
     // load live units
     try{
-      const r = await fetch(`${API}?action=getConfig&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
-      const data = await r.json();
+      let data = SESSION_CONFIG;
+      if(!data){
+        const r = await fetch(`${API}?action=getConfig&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+        data = await r.json();
+      }
       if(data.error){ throw new Error(data.error + (data.reason?' ('+data.reason+')':'')); }
       entState.units  = (data.units||[]).filter(u=>String(u.is_active).toUpperCase()==='YES');
       entState.blocks = data.floors||[];   // capacity blocks, for occupancy
