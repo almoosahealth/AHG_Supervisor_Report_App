@@ -485,11 +485,13 @@
 
   // Bump on every commit. Shown bottom-right with the API version beside it —
   // if they disagree, something didn't deploy.
-  // Paste the AHG_LOGO_URL line from the temperature monitor's index.html
-  // here — same base64 string, so the two apps carry one identical mark.
-  const AHG_LOGO_URL = '';
+  // logo.png sits next to index.html in the repo. A separate file rather than
+  // an inlined base64 string: the HTML stays readable and the browser caches
+  // the image once instead of re-parsing it on every load. If it is missing,
+  // the crest falls back to the letter and nothing breaks.
+  const AHG_LOGO_URL = 'logo.png';
 
-  const APP_VERSION  = '0.4.0';
+  const APP_VERSION  = '0.5.0';
   const APP_DATE     = '2026-09-07';
   let   API_BUILD    = '?';   // server fingerprint, reported by getSession
 
@@ -530,8 +532,14 @@
     // The page version is hand-set; the api build is a hash of the deployed
     // server source, stamped with when it first ran. If a deploy did not take,
     // the build string simply does not change.
-    b.textContent = `v${APP_VERSION} · api ${API_BUILD}`;
-    b.title = `page ${APP_VERSION} (${APP_DATE})  ·  server build ${API_BUILD}`;
+    // Before sign-in the server has not been asked anything, so there is no
+    // build to report. Showing "api ?" reads like a fault rather than a
+    // not-yet, so the api half only appears once getSession has answered.
+    const known = API_BUILD && API_BUILD !== '?';
+    b.textContent = known ? `v${APP_VERSION} · api ${API_BUILD}` : `v${APP_VERSION}`;
+    b.title = known
+      ? `page ${APP_VERSION} (${APP_DATE})  ·  server build ${API_BUILD}`
+      : `page ${APP_VERSION} (${APP_DATE})  ·  sign in to read the server build`;
   }
   document.addEventListener('DOMContentLoaded', paintVersion);
 
