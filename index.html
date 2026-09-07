@@ -213,6 +213,13 @@
   .entry-status.warn{color:var(--amber);background:var(--amber-wash);padding:11px 14px;border-radius:9px;border:1px solid #ecdcb8}
 
 /* admin console */
+/* masthead logo — same treatment as the temperature monitor */
+.mast-logo{flex:none;height:52px;min-width:96px;background:rgba(255,255,255,.95);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  padding:6px 12px;font-weight:700;font-size:13px;color:var(--teal-deep);
+  letter-spacing:.5px;margin-left:auto;margin-right:14px}
+.mast-logo img{max-height:40px;max-width:130px;display:block}
+
 #adminPanel .fld{margin-bottom:16px}
 #adminPanel .fld>label:first-child{display:block;font-size:11px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--faint);margin-bottom:6px}
@@ -287,9 +294,10 @@
 <div class="masthead">
   <div class="crest">A</div>
   <div class="mast-titles">
-    <h1>ARH Shift Report</h1>
-    <div class="sub">Almoosa Rehabilitation Hospital · Nursing Command Dashboard</div>
+    <h1>Supervisor Shift Report</h1>
+    <div class="sub">Almoosa Health Group · Nursing Informatics</div>
   </div>
+  <div class="mast-logo" id="mastLogo">AHG</div>
   <div class="date-nav">
     <button id="prevDay" title="Previous day">‹</button>
     <input type="date" id="datePick">
@@ -476,9 +484,13 @@
 
   // Bump on every commit. Shown bottom-right with the API version beside it —
   // if they disagree, something didn't deploy.
-  const APP_VERSION  = '0.1.0';
+  // Paste the AHG_LOGO_URL line from the temperature monitor's index.html
+  // here — same base64 string, so the two apps carry one identical mark.
+  const AHG_LOGO_URL = '';
+
+  const APP_VERSION  = '0.2.0';
   const APP_DATE     = '2026-09-07';
-  let   API_VERSION  = '?';
+  let   API_BUILD    = '?';   // server fingerprint, reported by getSession
 
   // ── Azure / Entra login (same app registration as the temp monitor) ──
   const CLIENT_ID       = '219fd90f-4c4b-474d-ae7d-a17f71ecc511';   // AHG-NursingApps-Graph
@@ -487,6 +499,17 @@
   const REDIRECT_URI    = 'https://almoosahealth.github.io/AHG_Supervisor_Report_App/';
 
   const $ = id => document.getElementById(id);
+
+  function applyLogo(){
+    if(!AHG_LOGO_URL) return;              // no logo set — the AHG text stands in
+    const box = $('mastLogo'); if(!box) return;
+    box.textContent = '';
+    const img = document.createElement('img');
+    img.src = AHG_LOGO_URL; img.alt = 'Almoosa Health';
+    img.onerror = () => { box.textContent = 'AHG'; };
+    box.appendChild(img);
+  }
+  document.addEventListener('DOMContentLoaded', applyLogo);
 
   function paintVersion(){
     let b = $('verBadge');
@@ -499,10 +522,11 @@
         'padding:5px 12px;box-shadow:var(--shadow);pointer-events:none';
       document.body.appendChild(b);
     }
-    const mismatch = API_VERSION !== '?' && API_VERSION !== APP_VERSION;
-    b.textContent = `app ${APP_VERSION} · api ${API_VERSION} · ${APP_DATE}`;
-    b.style.color = mismatch ? 'var(--alert)' : 'var(--faint)';
-    b.title = mismatch ? 'Page and server versions differ — one of them is stale.' : '';
+    // The page version is hand-set; the api build is a hash of the deployed
+    // server source, stamped with when it first ran. If a deploy did not take,
+    // the build string simply does not change.
+    b.textContent = `v${APP_VERSION} · api ${API_BUILD}`;
+    b.title = `page ${APP_VERSION} (${APP_DATE})  ·  server build ${API_BUILD}`;
   }
   document.addEventListener('DOMContentLoaded', paintVersion);
 
@@ -570,7 +594,7 @@
       const u = sess.user || sess;
       // Config arrives with the session, so the entry form never has to ask.
       if(sess.units){ SESSION_CONFIG = { units: sess.units, floors: sess.floors }; }
-      if(sess.api_version){ API_VERSION = sess.api_version; paintVersion(); }
+      if(sess.api){ API_BUILD = sess.api.build + (sess.api.since?' · '+sess.api.since:''); paintVersion(); }
       if(!u.found){
         // valid Almoosa login, but not registered / inactive
         const msg = u.reason==='inactive'
@@ -646,11 +670,11 @@
 
     if(role==='director'){
       document.querySelector('.masthead .sub').textContent =
-        'Almoosa Rehabilitation Hospital · Nursing Command Dashboard';
+        HOSPITAL + ' · Nursing Command Dashboard';
       init();
     } else if(role==='nsa'){
       document.querySelector('.masthead .sub').textContent =
-        'Almoosa Rehabilitation Hospital · Shift Entry';
+        HOSPITAL + ' · Shift Entry';
       // The director path hides these inside init(); the entry path has to do
       // it itself or the spinner sits on top of a fully rendered form.
       ['loadingState','emptyState','report'].forEach(x=>$(x) && $(x).classList.add('hidden'));
