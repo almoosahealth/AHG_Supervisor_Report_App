@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARH Shift Report — Director Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#12211f; --ink-soft:#4a5d59; --faint:#8a9994; --line:#dde7e4;
+    --paper:#f7f5f0; --card:#ffffff;
+    --teal:#0a7c6e; --teal-deep:#06463f; --teal-wash:#e8f3f1; --teal-mid:#8fc9bf;
+    --alert:#b23b2e; --alert-wash:#fbeeec;
+    --amber:#b07a1e; --amber-wash:#fbf3e4;
+    --good:#1a7a4a; --good-wash:#eaf5ee;
+    --a1:#0a7c6e; --b1:#3f4f8c;
+    --shadow:0 1px 2px rgba(18,33,31,.04),0 8px 24px rgba(18,33,31,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+
+  /* ── Masthead ── */
+  .masthead{background:var(--teal-deep);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:18px;position:sticky;top:0;z-index:20;box-shadow:0 2px 20px rgba(6,70,63,.25)}
+  .crest{width:42px;height:42px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Newsreader',serif;font-size:22px;font-weight:600}
+  .mast-titles{flex:1;min-width:0}
+  .mast-titles h1{font-family:'Newsreader',serif;font-size:21px;font-weight:600;letter-spacing:.2px;line-height:1.1}
+  .mast-titles .sub{font-size:12px;opacity:.7;margin-top:2px;letter-spacing:.3px}
+  .date-nav{display:flex;align-items:center;gap:8px}
+  .date-nav button{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;transition:background .15s}
+  .date-nav button:hover{background:rgba(255,255,255,.2)}
+  .date-nav input[type=date]{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:8px;padding:7px 10px;font-family:'IBM Plex Mono',monospace;font-size:13px;color-scheme:dark}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 28px 80px}
+
+  /* ── Dateline ── */
+  .dateline{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:8px 2px 20px;border-bottom:2px solid var(--ink);margin-bottom:24px;flex-wrap:wrap}
+  .dateline .big{font-family:'Newsreader',serif;font-size:32px;font-weight:600;letter-spacing:-.3px}
+  .dateline .big .day{color:var(--teal)}
+  .dateline .meta{font-size:12.5px;color:var(--ink-soft);text-align:right;line-height:1.7}
+  .dateline .meta b{color:var(--ink);font-weight:600}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px}
+  .pill.a1{background:var(--teal-wash);color:var(--teal-deep)}
+  .pill.b1{background:#e9ecf7;color:var(--b1)}
+
+  /* ── Section label ── */
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);margin:34px 0 14px;display:flex;align-items:center;gap:10px}
+  .eyebrow::after{content:'';flex:1;height:1px;background:var(--line)}
+  .eyebrow:first-of-type{margin-top:8px}
+
+  /* ── KPI strip ── */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .label{font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft)}
+  .kpi .val{font-family:'Newsreader',serif;font-size:38px;font-weight:600;line-height:1;margin-top:8px;letter-spacing:-1px}
+  .kpi .split{margin-top:9px;display:flex;gap:6px;flex-wrap:wrap}
+  .kpi .split span{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 7px;border-radius:6px}
+  .kpi .split .sa{background:var(--teal-wash);color:var(--teal-deep)}
+  .kpi .split .sb{background:#e9ecf7;color:var(--b1)}
+
+  /* ── Safety streak cards ── */
+  .streaks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .streak{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+  .streak .ev{font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink);display:flex;align-items:center;gap:7px}
+  .streak .ev .b{font-size:10px;font-weight:600;color:var(--faint);font-family:'IBM Plex Mono',monospace}
+  .streak .days{font-family:'Newsreader',serif;font-size:46px;font-weight:600;line-height:1;margin:10px 0 2px;letter-spacing:-1.5px}
+  .streak .days small{font-size:14px;color:var(--ink-soft);font-family:'Inter';font-weight:500;letter-spacing:0}
+  .streak .rec{font-size:11.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace}
+  .streak .rec b{color:var(--amber)}
+  .streak.is-record::after{content:'RECORD';position:absolute;top:11px;right:-26px;background:var(--good);color:#fff;font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 30px;transform:rotate(45deg);font-family:'IBM Plex Mono',monospace}
+  .streak.counter{background:linear-gradient(180deg,#fff,#fcfbf8)}
+  .streak .bar{height:3px;background:var(--teal);border-radius:2px;margin-top:11px;opacity:.5}
+
+  /* ── Census table ── */
+  .tablecard{background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:#fafbfa;text-align:left;padding:11px 14px;font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--ink-soft);border-bottom:1.5px solid var(--line);white-space:nowrap}
+  thead th.num{text-align:center}
+  tbody td{padding:10px 14px;border-bottom:1px solid #eef3f2;vertical-align:top}
+  tbody td.num{text-align:center;font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+  tbody tr:hover{background:#fafcfb}
+  .floor-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--teal-deep);background:var(--teal-wash);padding:2px 7px;border-radius:5px}
+  .unit-name{font-weight:600;color:var(--ink)}
+  .zero{color:var(--faint)}
+  .mrns{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--ink-soft);max-width:230px;line-height:1.5}
+  tfoot td{padding:12px 14px;font-weight:700;background:#fafbfa;border-top:2px solid var(--ink);font-family:'IBM Plex Mono',monospace;text-align:center}
+  tfoot td.lbl{text-align:left;font-family:'Inter';letter-spacing:.4px;text-transform:uppercase;font-size:11px}
+
+  /* ── Two-col layout for procedures + narrative ── */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  @media(max-width:820px){.cols{grid-template-columns:1fr}}
+
+  .proctable td.num{font-family:'IBM Plex Mono',monospace}
+  .proc-a1{color:var(--a1);font-weight:600}
+  .proc-b1{color:var(--b1);font-weight:600}
+  .miss{color:var(--alert)}
+  .meet{color:var(--good)}
+
+  /* ── Narrative ── */
+  .narr{display:flex;flex-direction:column;gap:2px}
+  .narr-item{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--line);border-radius:0 9px 9px 0;padding:11px 15px;margin-bottom:9px;box-shadow:var(--shadow)}
+  .narr-item.has{border-left-color:var(--teal)}
+  .narr-item .h{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--ink-soft);display:flex;justify-content:space-between;align-items:center}
+  .narr-item .h .n{background:var(--teal);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 7px;border-radius:10px}
+  .narr-item .body{font-size:12.5px;color:var(--ink);margin-top:7px;line-height:1.6}
+  .narr-item .body .line{padding:4px 0;border-bottom:1px dotted var(--line)}
+  .narr-item .body .line:last-child{border-bottom:none}
+  .narr-item.none .body{color:var(--faint);font-style:italic;margin-top:4px}
+
+  .supbar{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  @media(max-width:820px){.supbar{grid-template-columns:1fr}}
+  .supcard{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+  .supcard .tag{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;padding:4px 10px;border-radius:7px}
+  .supcard.a1 .tag{background:var(--teal-wash);color:var(--teal-deep)}
+  .supcard.b1 .tag{background:#e9ecf7;color:var(--b1)}
+  .supcard .who{font-size:11px;color:var(--ink-soft)}
+  .supcard .who b{display:block;font-size:14px;color:var(--ink);font-weight:600;letter-spacing:.2px;margin-top:1px}
+
+  /* ── States ── */
+  .state{text-align:center;padding:90px 20px;color:var(--ink-soft)}
+  .state .spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 18px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .state h2{font-family:'Newsreader',serif;font-size:24px;color:var(--ink);font-weight:600;margin-bottom:8px}
+  .state p{font-size:14px;max-width:380px;margin:0 auto}
+  .hidden{display:none!important}
+
+  .footnote{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:11px;color:var(--faint);text-align:center;letter-spacing:.3px}
+
+  /* ── Auth screens ── */
+  .auth-screen{position:fixed;inset:0;background:linear-gradient(160deg,var(--teal-deep),#0a3d37);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+  .auth-card{background:var(--card);border-radius:18px;padding:44px 38px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+  .auth-crest{width:64px;height:64px;border-radius:16px;background:var(--teal-deep);color:#fff;font-family:'Newsreader',serif;font-size:32px;font-weight:600;display:flex;align-items:center;justify-content:center;margin:0 auto 22px}
+  .auth-title{font-family:'Newsreader',serif;font-size:25px;font-weight:600;color:var(--ink);letter-spacing:-.2px}
+  .auth-sub{font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.55}
+  .auth-btn{display:inline-flex;align-items:center;gap:11px;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:14px 26px;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;margin-top:26px;transition:border-color .15s,box-shadow .15s}
+  .auth-btn:hover{border-color:var(--teal);box-shadow:0 4px 14px rgba(10,124,110,.15)}
+  .auth-note{font-size:11.5px;color:var(--faint);margin-top:20px;letter-spacing:.2px}
+  .auth-deny{font-size:46px;margin-bottom:8px}
+  .whoami{font-size:11px;color:rgba(255,255,255,.7);font-family:'IBM Plex Mono',monospace;margin-left:6px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .role-switch{cursor:pointer;border-bottom:1px dotted rgba(255,255,255,.5);transition:color .15s}
+  .role-switch:hover{color:#fff}
+  .chooser-cards{display:flex;flex-direction:column;gap:11px;margin-top:24px}
+  .role-card{text-align:left;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s,transform .1s,box-shadow .15s;font-family:'Inter',sans-serif}
+  .role-card:hover{border-color:var(--teal);box-shadow:0 4px 16px rgba(10,124,110,.12);transform:translateY(-1px)}
+  .role-card:active{transform:translateY(0)}
+  .role-name{font-size:16px;font-weight:600;color:var(--teal-deep)}
+  .role-desc{font-size:12.5px;color:var(--ink-soft);margin-top:4px;line-height:1.45}
+
+  /* ── NSA entry form ── */
+  .entry-head{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 18px;border-bottom:2px solid var(--ink);margin-bottom:22px;flex-wrap:wrap;gap:12px}
+  .entry-title{font-family:'Newsreader',serif;font-size:30px;font-weight:600}
+  .entry-headmeta{font-size:12.5px;color:var(--ink-soft);text-align:right;line-height:1.6}
+  .entry-headmeta .editing{display:inline-block;background:var(--amber-wash);color:var(--amber);font-weight:600;font-size:11px;padding:3px 10px;border-radius:20px;font-family:'IBM Plex Mono'}
+
+  /* Accordion */
+  .acc{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+  .acc-head{width:100%;display:flex;align-items:center;gap:12px;padding:16px 20px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;text-align:left}
+  .acc-head:hover{background:#fafcfb}
+  .acc-caret{width:24px;height:24px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--teal-wash);color:var(--teal-deep);border-radius:6px;font-size:16px;font-weight:600;line-height:1}
+  .acc-title{flex:1;font-size:15px;font-weight:600;color:var(--ink)}
+  .acc-sum{font-size:12px;color:var(--ink-soft);font-family:'IBM Plex Mono';background:var(--paper);padding:3px 10px;border-radius:20px}
+  .acc-sum.has{background:var(--good-wash);color:var(--good)}
+  .acc-body{display:none;padding:0 20px 20px;border-top:1px solid var(--line)}
+  .acc.open .acc-body{display:block}
+  .acc.open .acc-caret{background:var(--teal);color:#fff}
+
+  .entry-submitbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;padding-top:18px;border-top:2px solid var(--ink);flex-wrap:wrap}
+  .ecard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:22px;box-shadow:var(--shadow);margin-bottom:18px}
+  .efield{margin-bottom:18px}
+  .efield:last-child{margin-bottom:0}
+  .efield label{display:block;font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-soft);margin-bottom:8px}
+  .efield input[type=text],.efield input[type=number],.efield input[type=date],.efield textarea{width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:9px;font-family:'Inter',sans-serif;font-size:15px;color:var(--ink);background:#fff;outline:none;transition:border-color .15s}
+  .efield input:focus,.efield textarea:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,124,110,.1)}
+  .btn-ghost{padding:11px 16px;background:var(--teal-wash);color:var(--teal-deep);border:1.5px solid var(--teal-mid);border-radius:9px;font-family:'Inter';font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .shift-pills{display:flex;gap:10px}
+  .shift-pill{flex:1;padding:15px;border:1.5px solid var(--line);border-radius:9px;text-align:center;font-size:15px;font-weight:500;cursor:pointer;background:#fff;color:var(--ink-soft);transition:all .15s}
+  .shift-pill.sel{background:var(--teal);border-color:var(--teal);color:#fff}
+  .estep-nav{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+  .btn-next,.btn-back,.btn-submit-shift{font-family:'Inter';font-size:14px;font-weight:600;border-radius:9px;padding:12px 22px;cursor:pointer;border:1.5px solid transparent;transition:all .15s}
+  .btn-next{background:var(--teal);color:#fff}
+  .btn-next:hover{background:var(--teal-deep)}
+  .btn-back{background:#fff;color:var(--ink-soft);border-color:var(--line)}
+  .btn-submit-shift{background:var(--good);color:#fff;font-size:15px;padding:14px 28px}
+  .btn-submit-shift:disabled{opacity:.5;cursor:not-allowed}
+  .entry-census-wrap{overflow-x:auto}
+  .entry-census{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+  .entry-census thead th{background:#fafbfa;text-align:center;padding:10px 8px;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--ink-soft);border-bottom:1.5px solid var(--line);white-space:nowrap}
+  .entry-census thead th:nth-child(1),.entry-census thead th:nth-child(2){text-align:left}
+  .entry-census tbody td{padding:6px 8px;border-bottom:1px solid #eef3f2}
+  .entry-census tbody tr:hover{background:#fafcfb}
+  .entry-census .floor-tag{font-family:'IBM Plex Mono';font-size:11px;font-weight:600;color:var(--teal-deep);background:var(--teal-wash);padding:2px 6px;border-radius:4px}
+  .entry-census .uname{font-weight:600;font-size:12.5px}
+  .entry-census input{width:54px;padding:6px 4px;border:1.5px solid var(--line);border-radius:7px;text-align:center;font-family:'IBM Plex Mono';font-size:13px;outline:none;transition:background .15s,border-color .15s}
+  .entry-census input:focus{border-color:var(--teal);background:#fff !important}
+  .entry-census input.empty{background:#fdf6e9;border-color:#e8d9b5}
+  .eproc-row,.enarr-row{display:grid;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eef3f2}
+  .eproc-row{grid-template-columns:1fr 80px 80px}
+  .eproc-row:last-child,.enarr-row:last-child{border-bottom:none}
+  .eproc-row .plabel,.enarr-row .nlabel{font-size:13px;font-weight:600}
+  .eproc-row .psub{font-size:11px;color:var(--faint)}
+  .eproc-row input{width:100%;padding:8px;border:1.5px solid var(--line);border-radius:7px;text-align:center;font-family:'IBM Plex Mono';font-size:13px;outline:none}
+  .enarr-row{grid-template-columns:1fr}
+  .enarr-row textarea{min-height:54px;resize:vertical;font-size:13px}
+  .enarr-row .nlabel{margin-bottom:6px}
+  .ereview-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef3f2;font-size:13px}
+  .ereview-row .k{color:var(--ink-soft);font-weight:500}
+  .ereview-row .v{font-weight:600;font-family:'IBM Plex Mono'}
+  .ereview-sec{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--teal);margin:16px 0 6px}
+  .entry-status{padding:0 2px;margin-bottom:12px;font-size:14px;font-weight:500}
+  .entry-status.err{color:var(--alert)}
+  .entry-status.ok{color:var(--good)}
+  .entry-status.warn{color:var(--amber);background:var(--amber-wash);padding:11px 14px;border-radius:9px;border:1px solid #ecdcb8}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN GATE (shown until authenticated) ══ -->
+<div id="auth-login" class="auth-screen">
+  <div class="auth-card">
+    <div class="auth-crest">A</div>
+    <div class="auth-title">ARH Shift Report</div>
+    <div class="auth-sub">Nursing Command Dashboard · Almoosa Rehabilitation Hospital</div>
+    <button class="auth-btn" onclick="signIn()">
+      <svg width="20" height="20" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+        <rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+      </svg>
+      Sign in with Microsoft
+    </button>
+    <div class="auth-note">Restricted to authorised Almoosa nursing leadership.</div>
+  </div>
+</div>
+
+<div id="auth-processing" class="auth-screen hidden">
+  <div class="auth-card">
+    <div class="spin" style="margin:0 auto 20px"></div>
+    <div class="auth-sub">Verifying your identity…</div>
+  </div>
+</div>
+
+<div id="auth-denied" class="auth-screen hidden">
+  <div class="auth-card">
+    <div class="auth-deny">⚠</div>
+    <div class="auth-title">Access denied</div>
+    <div class="auth-sub">This dashboard is limited to Almoosa Health accounts. Sign in with your hospital Microsoft account.</div>
+    <button class="auth-btn" onclick="signIn()" style="margin-top:18px">Try again</button>
+  </div>
+</div>
+
+<div id="auth-chooser" class="auth-screen hidden">
+  <div class="auth-card" style="max-width:440px">
+    <div class="auth-crest">A</div>
+    <div class="auth-title" id="chooser-greet">Hello</div>
+    <div class="auth-sub">You have access to more than one workspace. How would you like to work right now?</div>
+    <div id="chooser-cards" class="chooser-cards"></div>
+    <div class="auth-note">You can switch anytime from the top corner.</div>
+  </div>
+</div>
+
+<!-- ══ THE APP (hidden until authenticated) ══ -->
+<div id="app" class="hidden">
+
+<div class="masthead">
+  <div class="crest">A</div>
+  <div class="mast-titles">
+    <h1>ARH Shift Report</h1>
+    <div class="sub">Almoosa Rehabilitation Hospital · Nursing Command Dashboard</div>
+  </div>
+  <div class="date-nav">
+    <button id="prevDay" title="Previous day">‹</button>
+    <input type="date" id="datePick">
+    <button id="nextDay" title="Next day">›</button>
+    <span id="whoami" class="whoami"></span>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- Loading -->
+  <div class="state" id="loadingState">
+    <div class="spin"></div>
+    <p>Loading the shift report…</p>
+  </div>
+
+  <!-- Empty -->
+  <div class="state hidden" id="emptyState">
+    <h2>No report for this day</h2>
+    <p>Neither the A1 nor B1 shift has been filed for the selected date. Pick another day, or check back once the supervisors have submitted.</p>
+  </div>
+
+  <!-- Report -->
+  <div id="report" class="hidden">
+
+    <div class="dateline">
+      <div class="big">Report for <span class="day" id="dlDate">—</span></div>
+      <div class="meta" id="dlMeta"></div>
+    </div>
+
+    <!-- Supervisors -->
+    <div class="supbar" id="supBar"></div>
+
+    <!-- KPIs -->
+    <div class="eyebrow">The day at a glance</div>
+    <div class="kpis" id="kpiStrip"></div>
+
+    <!-- Safety streaks -->
+    <div class="eyebrow">Patient safety — days since last event</div>
+    <div class="streaks" id="streakGrid"></div>
+
+    <!-- Census -->
+    <div class="eyebrow">Census by floor</div>
+    <div class="tablecard">
+      <table id="censusTable">
+        <thead>
+          <tr>
+            <th>Floor</th><th>Unit</th>
+            <th class="num">ARH</th><th class="num">ASH·in·ARH</th><th class="num">Virtual</th>
+            <th class="num">Adm</th><th class="num">Disch</th><th class="num">Transfers</th>
+            <th>Patients (MRN)</th>
+          </tr>
+        </thead>
+        <tbody id="censusBody"></tbody>
+        <tfoot id="censusFoot"></tfoot>
+      </table>
+    </div>
+
+    <!-- Procedures + Narrative -->
+    <div class="cols">
+      <div>
+        <div class="eyebrow">Procedures — A1 / B1</div>
+        <div class="tablecard">
+          <table class="proctable">
+            <thead><tr><th>Procedure</th><th class="num">A1</th><th class="num">B1</th><th class="num">Total</th><th class="num">Exp.</th></tr></thead>
+            <tbody id="procBody"></tbody>
+          </table>
+        </div>
+        <div class="eyebrow">OPD census</div>
+        <div class="tablecard">
+          <table><tbody id="opdBody"></tbody></table>
+        </div>
+      </div>
+      <div>
+        <div class="eyebrow">Shift narrative</div>
+        <div class="narr" id="narrList"></div>
+      </div>
+    </div>
+
+    <div class="footnote" id="foot"></div>
+  </div>
+
+  <!-- ══ NSA SHIFT ENTRY ══ -->
+  <div id="nsaEntry" class="hidden">
+    <div class="entry-head">
+      <div class="entry-title">File a Shift Report</div>
+      <div class="entry-headmeta" id="entHeadMeta"></div>
+    </div>
+
+    <div id="entInlineMsg" class="entry-status"></div>
+
+    <!-- Shift details (always open at top) -->
+    <div class="ecard" id="entDetails">
+      <div class="eyebrow" style="margin-top:0">Shift details</div>
+      <div class="efield">
+        <label>Date</label>
+        <div class="date-row">
+          <input type="date" id="ent-date">
+          <button class="btn-ghost" onclick="entSetToday()">Today</button>
+        </div>
+      </div>
+      <div class="efield">
+        <label>Shift</label>
+        <div class="shift-pills">
+          <div class="shift-pill" id="entShiftA1" onclick="entPickShift('A1')">☀️ A1 · Morning</div>
+          <div class="shift-pill" id="entShiftB1" onclick="entPickShift('B1')">🌙 B1 · Evening</div>
+        </div>
+      </div>
+      <div class="efield">
+        <label>Supervisor on duty</label>
+        <input type="text" id="ent-supervisor" placeholder="Your name">
+      </div>
+    </div>
+
+    <!-- Accordion: Census -->
+    <div class="acc" id="accCensus">
+      <button class="acc-head" onclick="accToggle('accCensus')">
+        <span class="acc-caret">+</span>
+        <span class="acc-title">Census by unit</span>
+        <span class="acc-sum" id="sumCensus">0 of 0 filled</span>
+      </button>
+      <div class="acc-body">
+        <div class="entry-census-wrap">
+          <table class="entry-census">
+            <thead><tr>
+              <th>Floor</th><th>Unit</th>
+              <th>ARH</th><th>ASH·in·ARH</th><th>Virtual</th>
+              <th>Adm</th><th>Disch</th><th>T:ASH→ARH</th><th>T:ARH→ASH</th>
+            </tr></thead>
+            <tbody id="entCensusBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accordion: Procedures -->
+    <div class="acc" id="accProcs">
+      <button class="acc-head" onclick="accToggle('accProcs')">
+        <span class="acc-caret">+</span>
+        <span class="acc-title">Procedures</span>
+        <span class="acc-sum" id="sumProcs">0 with counts</span>
+      </button>
+      <div class="acc-body">
+        <div id="entProcList"></div>
+      </div>
+    </div>
+
+    <!-- Accordion: Narrative -->
+    <div class="acc" id="accNarr">
+      <button class="acc-head" onclick="accToggle('accNarr')">
+        <span class="acc-caret">+</span>
+        <span class="acc-title">Narrative</span>
+        <span class="acc-sum" id="sumNarr">0 entries</span>
+      </button>
+      <div class="acc-body">
+        <div id="entNarrList"></div>
+      </div>
+    </div>
+
+    <!-- Submit bar -->
+    <div class="entry-submitbar">
+      <div class="entry-status" id="entStatus"></div>
+      <button class="btn-submit-shift" id="entSubmitBtn" onclick="entSubmit()">✓ Submit shift report</button>
+    </div>
+
+    <!-- Success -->
+    <div class="ecard hidden" id="estepDone" style="text-align:center;padding:50px 30px">
+      <div style="font-size:48px;margin-bottom:14px">✓</div>
+      <div style="font-family:'Newsreader',serif;font-size:26px;font-weight:600;color:var(--good)" id="entDoneTitle">Shift filed</div>
+      <div style="color:var(--ink-soft);margin-top:8px" id="entDoneMsg"></div>
+      <button class="btn-next" style="margin-top:24px" onclick="entReset()">+ File another shift</button>
+    </div>
+  </div>
+</div><!-- /.wrap -->
+</div><!-- /#app -->
+
+
+<script>
+  // ── Wired to your live engine ──
+  const API = 'https://script.google.com/macros/s/AKfycbw9LqyqmtyRNIN4FWc2ol-nvp8_KPVZvAkHTrUgE_mT4vsOEVAt1PijrdT6Z_kWF5cJng/exec';
+
+  // Which hospital this session is filing for. ARH today; the picker comes
+  // when ASH has its own floors and units seeded.
+  const HOSPITAL = 'ARH';
+
+  // ── Azure / Entra login (same app registration as the temp monitor) ──
+  const CLIENT_ID       = '1d1e41f1-15cf-4a80-b765-a0b4c0e3f83a';
+  const TENANT_ID       = '1bbc68f6-abcf-4283-92d7-5bb0a7c3c84b';
+  const ALLOWED_DOMAINS = ['almoosahospital.com.sa','almoosahealth.com.sa'];
+  const REDIRECT_URI    = 'https://almoosahealth.github.io/AH_NSA_ShiftReports/';
+
+  const $ = id => document.getElementById(id);
+
+  function authShow(id){
+    ['auth-login','auth-processing','auth-denied','auth-chooser'].forEach(s=>$(s).classList.add('hidden'));
+    $('app').classList.add('hidden');
+    if(id==='app'){ $('app').classList.remove('hidden'); }
+    else { $(id).classList.remove('hidden'); }
+  }
+
+  function signIn(){
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID, response_type: 'id_token token',
+      redirect_uri: REDIRECT_URI,
+      scope: 'openid profile email https://graph.microsoft.com/User.Read',
+      response_mode: 'fragment', nonce: Math.random().toString(36).substring(2),
+      prompt: 'select_account'
+    });
+    window.location.href = 'https://login.microsoftonline.com/'+TENANT_ID+'/oauth2/v2.0/authorize?'+params.toString();
+  }
+
+  function parseHash(hash){
+    const r={}; hash.replace(/^#/,'').split('&').forEach(p=>{const eq=p.indexOf('=');if(eq>-1)r[decodeURIComponent(p.slice(0,eq))]=decodeURIComponent(p.slice(eq+1));});
+    return r;
+  }
+  function parseJwt(token){
+    try{const b=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+      return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+    }catch(e){return {};}
+  }
+  function isAllowed(email){ return ALLOWED_DOMAINS.some(d=>email.endsWith('@'+d)); }
+
+  let GRAPH_TOKEN  = '';     // Graph access token — proves identity to the server
+  let CURRENT_USER = null;   // {full_name, title, roles:[...], email}
+  let ACTIVE_ROLE  = null;   // the role currently being viewed
+
+  function bootAuth(){
+    const hash = window.location.hash;
+    if(hash && hash.includes('id_token')){
+      authShow('auth-processing');
+      const token = parseHash(hash)['id_token'];
+      GRAPH_TOKEN = parseHash(hash)['access_token'] || '';
+      if(token){
+        const p = parseJwt(token);
+        const email = (p.preferred_username||p.email||p.upn||'').toLowerCase();
+        history.replaceState(null,'',REDIRECT_URI);
+        if(isAllowed(email)){
+          resolveUser(email);     // domain ok → now check the USERS registry
+        } else { authShow('auth-denied'); }
+      } else { authShow('auth-login'); }
+    } else if(hash && hash.includes('error')){
+      history.replaceState(null,'',REDIRECT_URI);
+      authShow('auth-login');
+    } else {
+      authShow('auth-login');
+    }
+  }
+
+  // Look the authenticated email up in the USERS tab → roles → route.
+  async function resolveUser(email){
+    try{
+      const r = await fetch(`${API}?action=getUser&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+      const u = await r.json();
+      if(!u.found){
+        // valid Almoosa login, but not registered / inactive
+        const msg = u.reason==='inactive'
+          ? 'Your account is registered but currently inactive. Contact the system administrator.'
+          : 'Your Almoosa account is not registered for this system. Contact the administrator to be added.';
+        $('auth-denied').querySelector('.auth-sub').textContent = msg;
+        authShow('auth-denied');
+        return;
+      }
+      CURRENT_USER = u;
+      if(!u.roles || u.roles.length===0){
+        $('auth-denied').querySelector('.auth-sub').textContent =
+          'Your account has no role assigned yet. Contact the administrator.';
+        authShow('auth-denied');
+        return;
+      }
+      if(u.roles.length===1){
+        enterAs(u.roles[0]);          // single role → straight in, no drama
+      } else {
+        showRoleChooser(u);           // multiple roles → let them pick
+      }
+    }catch(e){
+      $('auth-denied').querySelector('.auth-sub').textContent =
+        'Could not verify your access right now. Please try again in a moment.';
+      authShow('auth-denied');
+    }
+  }
+
+  const ROLE_LABEL = { director:'Director', nsa:'Nurse Shift Admin', admin:'Administrator' };
+  const ROLE_DESC  = {
+    director:'View the command dashboard — daily, monthly and quarterly reports.',
+    nsa:'File a shift report — enter census, procedures and narrative.',
+    admin:'Manage units, beds, trackers and system structure.'
+  };
+
+  function showRoleChooser(u){
+    const first = (u.full_name||'').split(' ')[0] || 'there';
+    let cards = u.roles.map(role=>
+      `<button class="role-card" onclick="enterAs('${role}')">`+
+        `<div class="role-name">${ROLE_LABEL[role]||role}</div>`+
+        `<div class="role-desc">${ROLE_DESC[role]||''}</div>`+
+      `</button>`).join('');
+    $('chooser-greet').textContent = `Hello, ${first}`;
+    $('chooser-cards').innerHTML = cards;
+    authShow('auth-chooser');
+  }
+
+  // Enter the app in a given role.
+  function enterAs(role){
+    ACTIVE_ROLE = role;
+    authShow('app');
+    // identity + role in the corner, with a switcher if multi-role
+    const who = CURRENT_USER ? CURRENT_USER.full_name : '';
+    let switcher = '';
+    if(CURRENT_USER && CURRENT_USER.roles.length>1){
+      switcher = ` · <span class="role-switch" onclick="showRoleChooser(CURRENT_USER)" title="Switch role">`+
+                 `${ROLE_LABEL[role]} ▾</span>`;
+    } else {
+      switcher = ` · ${ROLE_LABEL[role]||role}`;
+    }
+    $('whoami').innerHTML = who + switcher;
+
+    routeToRole(role);
+  }
+
+  // director → dashboard. nsa → entry form. admin → placeholder (built next).
+  function routeToRole(role){
+    document.getElementById('report').classList.add('hidden');
+    const nsa = document.getElementById('nsaEntry'); if(nsa) nsa.classList.add('hidden');
+    const ph = document.getElementById('rolePlaceholder'); if(ph) ph.classList.add('hidden');
+    document.querySelector('.date-nav').style.display = (role==='director') ? '' : 'none';
+
+    if(role==='director'){
+      document.querySelector('.masthead .sub').textContent =
+        'Almoosa Rehabilitation Hospital · Nursing Command Dashboard';
+      init();
+    } else if(role==='nsa'){
+      document.querySelector('.masthead .sub').textContent =
+        'Almoosa Rehabilitation Hospital · Shift Entry';
+      startNsaEntry();
+    } else {
+      showRolePlaceholder(role);
+    }
+  }
+
+  function showRolePlaceholder(role){
+    const label = ROLE_LABEL[role]||role;
+    document.querySelector('.masthead .sub').textContent =
+      'Almoosa Rehabilitation Hospital · '+label;
+    ['loadingState','emptyState','report'].forEach(s=>$(s) && $(s).classList.add('hidden'));
+    let ph = document.getElementById('rolePlaceholder');
+    if(!ph){
+      ph = document.createElement('div');
+      ph.id='rolePlaceholder'; ph.className='state';
+      document.querySelector('.wrap').appendChild(ph);
+    }
+    ph.classList.remove('hidden');
+    ph.innerHTML = `<h2>${label} workspace</h2>`+
+      `<p>This page is the next thing being built. The role system works — `+
+      `you're signed in as <b>${label}</b>. ${CURRENT_USER && CURRENT_USER.roles.length>1
+        ? 'Use the role switcher in the top corner to view the Director dashboard.' : ''}</p>`;
+  }
+
+  const n = v => { const x = Number(v); return isNaN(x) ? 0 : x; };
+  const dmy = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  let currentDate;
+
+  // Default to the date we have real data for, so the first open is never empty.
+  // (In production this becomes "yesterday".)
+  const SEED_DATE = '02/03/2026';
+
+  function init(){
+    const [dd,mm,yy] = SEED_DATE.split('/');
+    currentDate = new Date(+yy, +mm-1, +dd);
+    $('datePick').value = iso(currentDate);
+    load();
+    $('prevDay').onclick = ()=>{ currentDate.setDate(currentDate.getDate()-1); sync(); };
+    $('nextDay').onclick = ()=>{ currentDate.setDate(currentDate.getDate()+1); sync(); };
+    $('datePick').onchange = e=>{ const v=e.target.value.split('-'); currentDate=new Date(+v[0],+v[1]-1,+v[2]); load(); };
+  }
+  function sync(){ $('datePick').value = iso(currentDate); load(); }
+
+  function show(stateId){
+    ['loadingState','emptyState','report'].forEach(s=>$(s).classList.add('hidden'));
+    $(stateId).classList.remove('hidden');
+  }
+
+  async function load(){
+    show('loadingState');
+    const requested = dmy(currentDate);
+    console.log('[dashboard] requesting date:', requested);
+    try{
+      const r = await fetch(`${API}?action=getDayReport&hospital=${HOSPITAL}&date=${encodeURIComponent(requested)}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+      const data = await r.json();
+      if(!data.found){
+        $('emptyState').querySelector('h2').textContent='No report for this day';
+        $('emptyState').querySelector('p').innerHTML=
+          `Neither A1 nor B1 was filed for <b>${requested}</b>. Use the arrows or date picker to find a day with data — your seed data is on <b>02/03/2026</b>.`;
+        show('emptyState'); return;
+      }
+      render(data);
+      show('report');
+    }catch(e){
+      $('emptyState').querySelector('h2').textContent='Could not load';
+      $('emptyState').querySelector('p').textContent='The dashboard reached the server but something went wrong. Try again in a moment.';
+      show('emptyState');
+    }
+  }
+
+  // Safety streaks pulled separately, counted AS-OF the report's date (not today)
+  async function loadStreaks(asOfDate){
+    try{
+      const r = await fetch(`${API}?action=getTrackers&hospital=${HOSPITAL}&asOf=${encodeURIComponent(asOfDate)}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+      const data = await r.json();
+      renderStreaks(data.trackers||[]);
+    }catch(e){ $('streakGrid').innerHTML='<div class="state" style="padding:20px">Streaks unavailable.</div>'; }
+  }
+
+  function render(d){
+    // Dateline
+    $('dlDate').textContent = d.date;
+    const a1 = d.shifts.find(s=>s.shift==='A1'), b1 = d.shifts.find(s=>s.shift==='B1');
+    $('dlMeta').innerHTML =
+      `<b>${d.census.length}</b> unit rows · <b>${d.occupied_beds}</b> occupied beds<br>`+
+      `Shifts filed: ${a1?'<span class="pill a1">A1 ✓</span>':'<span class="pill a1" style="opacity:.4">A1 —</span>'} `+
+      `${b1?'<span class="pill b1">B1 ✓</span>':'<span class="pill b1" style="opacity:.4">B1 —</span>'}`;
+
+    // Supervisors
+    $('supBar').innerHTML =
+      supCard('a1','A1 · Morning', a1?a1.supervisor_name:'Not filed') +
+      supCard('b1','B1 · Evening', b1?b1.supervisor_name:'Not filed');
+
+    // KPIs (combined-but-not-collapsed: show DAY total + A1/B1 split)
+    const t = d.totals;
+    const kpi = (label,field)=>{
+      const day=n(t.DAY[field]), va=n(t.A1[field]), vb=n(t.B1[field]);
+      return `<div class="kpi"><div class="label">${label}</div>`+
+        `<div class="val mono">${day}</div>`+
+        `<div class="split"><span class="sa">A1 ${va}</span><span class="sb">B1 ${vb}</span></div></div>`;
+    };
+    $('kpiStrip').innerHTML =
+      `<div class="kpi"><div class="label">Occupied beds</div><div class="val mono">${d.occupied_beds}</div></div>`+
+      kpi('Admissions','admissions')+
+      kpi('Discharges','discharges')+
+      kpi('Transfers ASH→ARH','transfer_ash_to_arh')+
+      kpi('Transfers ARH→ASH','transfer_arh_to_ash');
+
+    renderCensus(d.census);
+    renderDetails(d.details);
+    loadStreaks(d.date);
+
+    $('foot').textContent = `Generated live from the nursing data sheet · ${new Date().toLocaleString()}`;
+  }
+
+  function supCard(cls,tag,who){
+    return `<div class="supcard ${cls}"><span class="tag">${tag}</span>`+
+      `<span class="who">Supervisor on duty<b>${who}</b></span></div>`;
+  }
+
+  function renderCensus(rows){
+    const cell = v => { const x=n(v); return x? `<td class="num">${x}</td>` : `<td class="num zero">·</td>`; };
+    let body='';
+    rows.forEach(c=>{
+      const transfers = n(c.transfer_ash_to_arh)+n(c.transfer_arh_to_ash)+n(c.trans_in)+n(c.trans_out);
+      body += `<tr>`+
+        `<td><span class="floor-tag">${c.floor||'—'}</span></td>`+
+        `<td><span class="unit-name">${c.unit_name||c.unit_id}</span></td>`+
+        cell(c.census_arh)+cell(c.census_ash_in_arh)+cell(c.virtual_ash)+
+        cell(c.admissions)+cell(c.discharges)+
+        (transfers?`<td class="num">${transfers}</td>`:`<td class="num zero">·</td>`)+
+        `<td class="mrns">${(c.patient_mrns||'').replace(/#/g,'#')||'<span class="zero">—</span>'}</td>`+
+      `</tr>`;
+    });
+    $('censusBody').innerHTML = body;
+
+    const sum=f=>rows.reduce((a,c)=>a+n(c[f]),0);
+    const tt=sum('transfer_ash_to_arh')+sum('transfer_arh_to_ash')+sum('trans_in')+sum('trans_out');
+    $('censusFoot').innerHTML = `<tr><td class="lbl" colspan="2">Total ARH / ASH</td>`+
+      `<td>${sum('census_arh')}</td><td>${sum('census_ash_in_arh')}</td><td>${sum('virtual_ash')}</td>`+
+      `<td>${sum('admissions')}</td><td>${sum('discharges')}</td><td>${tt}</td><td></td></tr>`;
+  }
+
+  function renderDetails(details){
+    // Procedures — fold A1/B1 into one row each
+    const procs={};
+    details.filter(d=>d.section_type==='PROCEDURE').forEach(d=>{
+      const k=d.item_key; procs[k]=procs[k]||{a1:0,b1:0,exp:0};
+      if(d.shift==='A1') procs[k].a1=n(d.count_value);
+      if(d.shift==='B1') procs[k].b1=n(d.count_value);
+      procs[k].exp=n(d.expected_value)||procs[k].exp;
+    });
+    let pb='';
+    Object.keys(procs).forEach(k=>{
+      const p=procs[k], tot=p.a1+p.b1;
+      const expClass = p.exp? (tot>=p.exp?'meet':(tot< p.exp && p.exp>0?'':'')):'';
+      pb+=`<tr><td>${k}</td>`+
+        `<td class="num proc-a1">${p.a1||'·'}</td>`+
+        `<td class="num proc-b1">${p.b1||'·'}</td>`+
+        `<td class="num"><b>${tot}</b></td>`+
+        `<td class="num ${expClass}">${p.exp||'·'}</td></tr>`;
+    });
+    $('procBody').innerHTML = pb || '<tr><td colspan="5" class="zero" style="text-align:center">No procedures recorded</td></tr>';
+
+    // OPD census
+    let ob='';
+    details.filter(d=>d.section_type==='OPD_CENSUS').forEach(d=>{
+      ob+=`<tr><td>${d.item_key}</td><td class="num" style="text-align:right;font-family:'IBM Plex Mono'">${n(d.count_value)}</td></tr>`;
+    });
+    $('opdBody').innerHTML = ob || '<tr><td class="zero">No OPD data</td></tr>';
+
+    // Narrative
+    const order=['EMERGENCY OR','SIGNIFICANT OVR','CODE','ADMISSION','DISCHARGE',
+      'INTERFACILITY TRANSFER (ASH TO ARH)','INTERFACILITY TRANSFER (ARH TO ASH)',
+      'TRANSFER IN','TRANSFER OUT','OTHERS','SOCIAL WORKER FEEDBACK','DUTY MANAGER'];
+    const narr=details.filter(d=>d.section_type==='NARRATIVE');
+    let nb='';
+    order.forEach(key=>{
+      const item=narr.find(d=>d.item_key===key);
+      if(!item) return;
+      const txt=(item.text_value||'').trim();
+      const isNone = !txt || txt.toUpperCase()==='NONE';
+      const cnt = n(item.count_value);
+      if(isNone){
+        nb+=`<div class="narr-item none"><div class="h">${key}</div><div class="body">None reported</div></div>`;
+      }else{
+        const lines = txt.split('|').map(l=>`<div class="line">${l.trim()}</div>`).join('');
+        nb+=`<div class="narr-item has"><div class="h">${key}${cnt?`<span class="n">${cnt}</span>`:''}</div><div class="body">${lines}</div></div>`;
+      }
+    });
+    // Planned
+    const planned=details.filter(d=>d.section_type==='PLANNED_ADMISSION'||d.section_type==='PLANNED_DISCHARGE');
+    planned.forEach(p=>{
+      const label=p.section_type==='PLANNED_ADMISSION'?'PLANNED ADMISSION / TRANSFER':'PLANNED DISCHARGE';
+      nb+=`<div class="narr-item has"><div class="h">${label}</div><div class="body"><div class="line">${p.text_value}</div></div></div>`;
+    });
+    $('narrList').innerHTML = nb || '<div class="narr-item none"><div class="body">No narrative entries</div></div>';
+  }
+
+  function renderStreaks(trackers){
+    const order=['FALLS','RESTRAINTS','HAPI','HAI','DECEASED','AMBULANCE TRIPS','ECT'];
+    const sorted=trackers.slice().sort((a,b)=>order.indexOf(a.tracker_type)-order.indexOf(b.tracker_type));
+    let h='';
+    sorted.forEach(t=>{
+      const isStreak = t.has_streak === true;
+      const naMode = String(t.current_streak_days).toUpperCase()==='N/A';
+
+      if(isStreak && !naMode){
+        // A real "days since last event" streak
+        const days=n(t.current_streak_days);
+        const recRaw=t.previous_record;
+        const hasRec = recRaw!=='' && String(recRaw).toUpperCase()!=='N/A';
+        const rec=n(recRaw);
+        const isRecord = hasRec && days>rec;
+        h+=`<div class="streak ${isRecord?'is-record':''}">`+
+          `<div class="ev">${t.tracker_type} <span class="b">${t.building||''}</span></div>`+
+          `<div class="days mono">${days}<small> days</small></div>`+
+          `<div class="rec">prev record <b>${hasRec?rec:'—'}</b></div>`+
+          `<div class="bar" style="width:${hasRec&&rec>0?Math.min(100,(days/Math.max(days,rec))*100):100}%"></div>`+
+        `</div>`;
+      } else {
+        // A simple monthly counter (no streak date) — show the count, not "no data"
+        const cnt = n(t.total_this_month);
+        h+=`<div class="streak counter">`+
+          `<div class="ev">${t.tracker_type} <span class="b">${t.building||''}</span></div>`+
+          `<div class="days mono" style="color:${cnt>0?'var(--alert)':'var(--good)'}">${cnt}<small> this month</small></div>`+
+          `<div class="rec">monthly count</div>`+
+          `<div class="bar" style="width:100%;opacity:${cnt>0?.5:.2}"></div>`+
+        `</div>`;
+      }
+    });
+    $('streakGrid').innerHTML = h || '<div style="color:var(--faint)">No trackers</div>';
+  }
+
+  // ══════════════════ NSA SHIFT ENTRY ══════════════════
+  let entState = { shift:null, units:[] };
+  let entSubmitConfirmed = false;
+
+  const ENT_PROCS = [
+    {key:'SLEEP STUDY'},{key:'HDU OPD',exp:true},{key:'HDU IP',exp:true},
+    {key:'OPD BOTOX'},{key:'OPD ESKETAMINE'},{key:'(ARH) OR'}
+  ];
+  const ENT_NARR = [
+    'EMERGENCY OR','SIGNIFICANT OVR','CODE','ADMISSION','DISCHARGE',
+    'INTERFACILITY TRANSFER (ASH TO ARH)','INTERFACILITY TRANSFER (ARH TO ASH)',
+    'TRANSFER IN','TRANSFER OUT','OTHERS','SOCIAL WORKER FEEDBACK','DUTY MANAGER'
+  ];
+
+  async function startNsaEntry(){
+    document.getElementById('nsaEntry').classList.remove('hidden');
+    document.getElementById('estepDone').classList.add('hidden');
+    document.querySelectorAll('#nsaEntry .acc, #entDetails, .entry-submitbar').forEach(el=>el.classList.remove('hidden'));
+    entState = { shift:null, units:[] };
+    entSubmitConfirmed=false;
+    if(CURRENT_USER) document.getElementById('ent-supervisor').value = CURRENT_USER.full_name || '';
+    entSetToday();
+    entClearErr();
+    // load live units
+    try{
+      const r = await fetch(`${API}?action=getConfig&hospital=${HOSPITAL}&token=${encodeURIComponent(GRAPH_TOKEN)}`);
+      const data = await r.json();
+      entState.units  = (data.units||[]).filter(u=>String(u.is_active).toUpperCase()==='YES');
+      entState.blocks = data.floors||[];   // capacity blocks, for occupancy
+    }catch(e){ entState.units=[]; }
+    // FLOOR ORDER: L3 at top → L14 at bottom (ascending floor number)
+    entState.units.sort((a,b)=> floorNum_(a.floor) - floorNum_(b.floor));
+    entBuildCensus();
+    entBuildProcs();
+    entBuildNarr();
+    // all accordions collapsed by default
+    ['accCensus','accProcs','accNarr'].forEach(id=>document.getElementById(id).classList.remove('open'));
+    document.querySelectorAll('#nsaEntry .acc-caret').forEach(c=>c.textContent='+');
+    entPickShift(null);
+    entUpdateSummaries();
+    document.getElementById('entHeadMeta').innerHTML='';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // Extract the numeric part of a floor label like "14F" / "3F" / "L9"
+  function floorNum_(f){
+    const m=String(f||'').match(/\d+/); return m?parseInt(m[0],10):999;
+  }
+
+  function accToggle(id){
+    const el=document.getElementById(id);
+    el.classList.toggle('open');
+    const caret=el.querySelector('.acc-caret');
+    if(caret) caret.textContent = el.classList.contains('open')?'−':'+';
+  }
+
+  function entSetToday(){
+    const t=new Date();
+    document.getElementById('ent-date').value =
+      `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  }
+  function entPickShift(s){
+    entState.shift=s;
+    document.getElementById('entShiftA1').classList.toggle('sel',s==='A1');
+    document.getElementById('entShiftB1').classList.toggle('sel',s==='B1');
+  }
+
+  function entBuildCensus(){
+    let b='';
+    entState.units.forEach(u=>{
+      b+=`<tr data-unit="${u.unit_id}">`+
+        `<td><span class="floor-tag">${u.floor||'—'}</span></td>`+
+        `<td><span class="uname">${u.unit_name||u.unit_id}</span></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="census_arh" oninput="entCellInput(this)"></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="census_ash_in_arh" oninput="entCellInput(this)"></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="virtual_ash" oninput="entCellInput(this)"></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="admissions" oninput="entCellInput(this)"></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="discharges" oninput="entCellInput(this)"></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="transfer_ash_to_arh" oninput="entCellInput(this)"></td>`+
+        `<td><input class="empty" type="number" inputmode="numeric" data-f="transfer_arh_to_ash" oninput="entCellInput(this)"></td>`+
+      `</tr>`;
+    });
+    document.getElementById('entCensusBody').innerHTML = b ||
+      '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--faint)">No active units found in the UNITS tab.</td></tr>';
+  }
+
+  // Per-cell: toggle the empty highlight, then refresh summaries.
+  function entCellInput(inp){
+    inp.classList.toggle('empty', inp.value.trim()==='');
+    entSubmitConfirmed=false;   // any edit re-arms the completeness check
+    entClearErr();
+    entUpdateSummaries();
+  }
+
+  function entBuildProcs(){
+    let h='';
+    ENT_PROCS.forEach(p=>{
+      h+=`<div class="eproc-row" data-proc="${p.key}">`+
+        `<div><div class="plabel">${p.key}</div><div class="psub">${p.exp?'count + expected':'count this shift'}</div></div>`+
+        `<input type="number" inputmode="numeric" data-pf="count" placeholder="count" oninput="entUpdateSummaries()">`+
+        (p.exp?`<input type="number" inputmode="numeric" data-pf="exp" placeholder="exp">`:`<div></div>`)+
+      `</div>`;
+    });
+    document.getElementById('entProcList').innerHTML=h;
+  }
+
+  function entBuildNarr(){
+    let h='';
+    ENT_NARR.forEach(key=>{
+      h+=`<div class="enarr-row" data-narr="${key}">`+
+        `<div class="nlabel">${key}</div>`+
+        `<textarea placeholder="Type details, or leave blank for NONE. Separate multiple entries with |" oninput="entUpdateSummaries()"></textarea>`+
+      `</div>`;
+    });
+    document.getElementById('entNarrList').innerHTML=h;
+  }
+
+  // Live "X of Y filled" summaries on each collapsed accordion header.
+  // A unit counts as filled only when EVERY cell in its row has a value.
+  function entUpdateSummaries(){
+    let cFilled=0; const cTotal=entState.units.length;
+    document.querySelectorAll('#entCensusBody tr[data-unit]').forEach(tr=>{
+      const cells=[...tr.querySelectorAll('input[data-f]')];
+      const allFilled = cells.length>0 && cells.every(i=>i.value.trim()!=='');
+      if(allFilled) cFilled++;
+    });
+    setSum('sumCensus', `${cFilled} of ${cTotal} filled`, cFilled===cTotal && cTotal>0);
+
+    // procedures: count rows with a count value entered
+    let pFilled=0;
+    document.querySelectorAll('.eproc-row[data-proc]').forEach(r=>{
+      if(r.querySelector('input[data-pf="count"]').value.trim()!=='') pFilled++;
+    });
+    setSum('sumProcs', `${pFilled} with counts`, pFilled>0);
+
+    // narrative: count boxes with real text
+    let nFilled=0;
+    document.querySelectorAll('.enarr-row textarea').forEach(t=>{
+      if(t.value.trim()!=='') nFilled++;
+    });
+    setSum('sumNarr', `${nFilled} entries`, nFilled>0);
+  }
+  function setSum(id,text,has){
+    const el=document.getElementById(id); if(!el) return;
+    el.textContent=text; el.classList.toggle('has',has);
+  }
+
+  function entShowMsg(m,kind){
+    const bar=document.getElementById('entInlineMsg');
+    bar.className='entry-status '+(kind||'err'); bar.textContent=m;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function entClearErr(){ const b=document.getElementById('entInlineMsg'); if(b){ b.textContent=''; b.className='entry-status'; } }
+  function entErr(m){ entShowMsg(m,'err'); }
+
+  function entCollect(){
+    const date_iso = document.getElementById('ent-date').value; // yyyy-mm-dd
+    const [yy,mm,dd]=date_iso.split('-');
+    const date = `${dd}/${mm}/${yy}`;
+    const shift = entState.shift;
+    const supervisor = document.getElementById('ent-supervisor').value.trim();
+
+    const census=[];
+    document.querySelectorAll('#entCensusBody tr[data-unit]').forEach(tr=>{
+      const row={unit_id:tr.getAttribute('data-unit')};
+      tr.querySelectorAll('input[data-f]').forEach(inp=>{
+        row[inp.getAttribute('data-f')]=inp.value.trim();
+      });
+      census.push(row);
+    });
+
+    const details=[];
+    document.querySelectorAll('.eproc-row[data-proc]').forEach(r=>{
+      const key=r.getAttribute('data-proc');
+      const cnt=r.querySelector('input[data-pf="count"]').value.trim();
+      const expEl=r.querySelector('input[data-pf="exp"]');
+      const exp=expEl?expEl.value.trim():'';
+      details.push({section_type:'PROCEDURE',item_key:key,shift:shift,count_value:cnt||0,expected_value:exp||'',text_value:''});
+    });
+    document.querySelectorAll('.enarr-row[data-narr]').forEach(r=>{
+      const key=r.getAttribute('data-narr');
+      let txt=r.querySelector('textarea').value.trim();
+      if(!txt) txt='NONE';
+      details.push({section_type:'NARRATIVE',item_key:key,shift:shift,count_value:'',expected_value:'',text_value:txt});
+    });
+
+    return {date,shift,supervisor,census,details};
+  }
+
+  async function entSubmit(){
+    // validate shift details
+    if(!document.getElementById('ent-date').value) return entErr('Please choose a date.');
+    if(!entState.shift) return entErr('Please select A1 or B1.');
+    if(!document.getElementById('ent-supervisor').value.trim()) return entErr('Please enter the supervisor name.');
+    entClearErr();
+
+    // gentle completeness check — count empty census cells
+    const emptyCells=[...document.querySelectorAll('#entCensusBody input[data-f]')].filter(i=>i.value.trim()==='');
+    if(emptyCells.length>0 && !entSubmitConfirmed){
+      const rows=new Set(emptyCells.map(i=>i.closest('tr').getAttribute('data-unit'))).size;
+      // open census so they can see the gaps
+      const acc=document.getElementById('accCensus'); if(!acc.classList.contains('open')) accToggle('accCensus');
+      entShowMsg(`${emptyCells.length} census cell${emptyCells.length>1?'s are':' is'} still empty across ${rows} unit${rows>1?'s':''} (highlighted below). Every field should have a number — use 0 for none. Press Submit again to file anyway.`,'warn');
+      entSubmitConfirmed=true;
+      return;
+    }
+    entSubmitConfirmed=false;
+
+    const d=entCollect();
+    const btn=document.getElementById('entSubmitBtn');
+    btn.disabled=true; btn.textContent='Submitting…';
+    document.getElementById('entStatus').className='entry-status';
+    try{
+      const payload={
+        action:'submitShift',
+        date:d.date, shift:d.shift, hospital:HOSPITAL,
+        supervisor_name:d.supervisor,
+        token: GRAPH_TOKEN,
+        census:d.census, details:d.details
+      };
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+      const res=await r.json();
+      if(res.error){
+        document.getElementById('entStatus').className='entry-status err';
+        document.getElementById('entStatus').textContent=res.error;
+        btn.disabled=false; btn.textContent='✓ Submit shift report';
+        return;
+      }
+      document.getElementById('entDoneMsg').textContent=`${d.shift} report for ${d.date} saved as ${res.report_id||''}.`;
+      document.querySelectorAll('#nsaEntry .acc, #entDetails, .entry-submitbar').forEach(el=>el.classList.add('hidden'));
+      document.getElementById('estepDone').classList.remove('hidden');
+      btn.disabled=false; btn.textContent='✓ Submit shift report';
+      window.scrollTo({top:0,behavior:'smooth'});
+    }catch(e){
+      document.getElementById('entStatus').className='entry-status err';
+      document.getElementById('entStatus').textContent='Could not submit. Check connection and try again.';
+      btn.disabled=false; btn.textContent='✓ Submit shift report';
+    }
+  }
+
+  function entReset(){ startNsaEntry(); }
+
+  bootAuth();   // gate the dashboard behind Microsoft login
+</script>
+</body>
+</html>
